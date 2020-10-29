@@ -1,0 +1,150 @@
+---
+title: "Reproducible Research: Peer Assessment 1"
+output: 
+  html_document:
+    keep_md: true
+---
+#...........................................................................
+## SECTION 0 - LOADING R PACKAGES
+install.packages("lubridate")
+install.packages("gridExtra")
+
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+library(lattice)
+library(ggplot2)
+library(grid)
+library(gridExtra)
+#...........................................................................
+## SECTION 1 - LOADING AND PROCESSING THE DATA
+# Download zip datafile from cloudfront
+url="https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
+datasource_zip="/Users/Brantana-Air/Desktop/Data_Projects/Coursera/Johns_Hopkins/Reproducible_Research/Course_Project_1/activity.zip"
+download.file(url,destfile=datasource_zip)
+# Unzip datafile
+unzip(datasource_zip)
+# Convert csv file to dataframe
+datasource_csv="/Users/Brantana-Air/Desktop/Data_Projects/Coursera/Johns_Hopkins/Reproducible_Research/Course_Project_1/activity.csv"
+df0 <- as.data.frame(read.csv(file=datasource_csv, header=TRUE, sep=",",stringsAsFactors = FALSE))
+# Examine the original dataset
+# Show the dimensions of the original dataframe.
+dim(df0)
+# Explore the column headings and datatypes of the original dataframe.
+str(df0)
+#...........................................................................
+## SECTION 2 - WHAT IS THE MEAN TOTAL NUMBER OF STEPS TAKEN PER DAY?
+s0 <- summary(df0)
+# Explore the summary data of the original dataframe, including:
+# 1. the total steps per day,
+# 2. the mean of the total steps per day, and
+# 3. the median of the total steps per day.
+# Chose to omit all rows containing na's for the following calculations in this section.
+df1 <- na.omit(df0) # Deleted na's from dataframe for calculation
+df1$date <- as.Date(df1$date, format = "%Y-%m-%d")
+df2 <- df1 %>% group_by(df1$date) %>% summarise(sum(steps))
+names(df2)[1]<-"Date"
+names(df2)[2]<-"Steps"
+df2 # <-- Total steps per day
+# Calculate the days having the mean and median and max.
+summary(df2) # <-- Mean and median steps per day.
+# Develop total daily steps plot histogram.
+ggplot(df2, aes(x=Steps)) + geom_histogram(color="black",fill="blue") +
+        labs(title="Histogram of Daily Steps",x="Number of Steps", y = "Number of Days")
+#...........................................................................
+## SECTION 3 - WHAT IS THE AVERAGE DAILY ACTIVITY PATTERN?
+# Calculate the average number of stepstaken per interval
+df3 <- na.omit(df0) # Deleted na's from dataframe for calculation
+df4 <- df3 %>% group_by(df1$interval) %>% summarise(mean(steps))
+names(df4)[1]<-"Interval"
+names(df4)[2]<-"Steps"
+# Determine the interval with the maximum mean number of steps by interval.
+summary(df4)
+# Most basic bubble plot
+ggplot(df4, aes(x=Interval, y=Steps)) +
+  geom_line( color="steelblue") + 
+  geom_point() +
+  labs(title="Time Series of Average Steps per 5-minute Interval (Across all Days)",x="5-minute Interval",y="Number of Steps")
+#...........................................................................
+## SECTION 4 - INPUTTING MISSING VALUES
+# Create a working dataframe from the original dataframe
+df5<-df0
+# Verify the columns with  na's.
+list_na <- colnames(df5)[apply(df5, 2, anyNA)]
+list_na
+# Calculate the total number of na values in the column.
+sum(is.na(df5$steps))
+# Calculate the mean stps using the existing step values.
+mean_na <- apply(df5[colnames(df5) %in% list_na],
+                         2, mean, na.rm = TRUE)
+# Create a new dataframe with the mean replacing any na value.
+df6 <- df5 %>%
+  mutate(steps = ifelse(is.na(steps), mean_na, steps))
+str(df6)
+# (Preserve current df6 for later use.)
+df7<-df6
+# Verify replacement of na values.
+sum(is.na(df6$steps))
+# Prepare df6 for histogram
+df6[3] <- df6[1]
+df6 <- df6[-1]
+names(df6)[1]<-"Date"
+names(df6)[2]<-"Steps"
+df6 = df6 %>% group_by(Date) %>% summarise(sum(Steps))
+names(df6)[2]<-"Steps"
+df6$Date <- as.Date(df6$Date, format = "%Y-%m-%d")
+# Calculate the days having the mean and median and max.
+s2 <- summary(df6)
+# Develop total daily steps plot histogram.
+p2 <- ggplot(df6, aes(x=Steps)) + geom_histogram(color="black",fill="blue") +
+  labs(title="Histogram of Daily Steps (with na Replacement)",x="Number of Steps", y = "Number of Days")
+p2
+# Compariing of summaries - without and with na replacement.
+s0
+s2
+#...........................................................................
+## SECTION 5 - ARE THERE DIFFERENCES IN ACTIVITY BETWEEN WEEKDAYS AND WEEKENDS?
+# Create a new dataframe with the mean replacing any na value.
+# (df7 is preserved in a previous section.)
+df7$date <- as.Date(df7$date, format = "%Y-%m-%d")
+df7[4]<-weekdays(df7$date,abbreviate=TRUE)
+df8<-df7
+names(df8)[1]<-"Steps"
+names(df8)[2]<-"Date"
+names(df8)[3]<-"Interval"
+names(df8)[4]<-"Weekday"
+df8[5]<- ifelse((df8$Weekday=="Sat" | df8$Weekday=="Sun"),"weekend", "weekday")
+names(df8)[5]<-"Wday_Wend"
+head(df8)
+# Break dataframe into weekend and weekday dataframes.
+df9a <- filter(df8,Wday_Wend=="weekend")
+df9b <- filter(df8,Wday_Wend=="weekday") 
+# Take average steps by interval.
+df10a <- df9a %>% group_by(Interval) %>% summarise(mean(Steps))
+df10b <- df9b %>% group_by(Interval) %>% summarise(mean(Steps))
+df10a <-data.frame(append(df10a, c(x1='weekend'), after=2))
+df10b <- data.frame(append(df10b, c(x1='weekday'), after=2))
+names(df10a)[2]<-"Steps"
+names(df10b)[2]<-"Steps"
+#df10 <- rbind(df10a,df10b) # df10 combined datafram created, but not utilized.
+#names(df10)[2]<-"Mean_Steps"
+#names(df10)[3]<-"Wday_Wend"
+# Plot weekday and weekend time series'
+p4a <- ggplot(df10a, aes(x=Interval, y=Steps,group=3)) +
+  geom_line( color="steelblue") + 
+  geom_point() +
+  labs(title="Weekends",x="",y="") +
+  theme(axis.text.x=element_blank())
+p4a <- p4a + ylim(0, 200)
+p4b <- ggplot(df10b, aes(x=Interval, y=Steps,group=3)) +
+  geom_line( color="steelblue") + 
+  geom_point() +
+  labs(title="Weekdays",x="5-minute Interval",y="Mean Number of Steps")
+par(mfrow=c(1,2))
+grid.arrange(p4a, p4b) # Print stacked separateplots for weekends and weekends.
+#...........................................................................
+## THE END
+
+
+
+
