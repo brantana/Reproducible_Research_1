@@ -51,6 +51,8 @@ summary(df2) # <-- Mean and median steps per day.
 # Develop total daily steps plot histogram.
 ggplot(df2, aes(x=Steps)) + geom_histogram(color="black",fill="blue") +
         labs(title="Histogram of Daily Steps",x="Number of Steps", y = "Number of Days")
+dev.copy(png,file="Plot_1.png")
+dev.off()
 #...........................................................................
 ## SECTION 3 - WHAT IS THE AVERAGE DAILY ACTIVITY PATTERN?
 # Calculate the average number of stepstaken per interval
@@ -65,6 +67,8 @@ ggplot(df4, aes(x=Interval, y=Steps)) +
   geom_line( color="steelblue") + 
   geom_point() +
   labs(title="Time Series of Average Steps per 5-minute Interval (Across all Days)",x="5-minute Interval",y="Number of Steps")
+dev.copy(png,file="Plot_2.png")
+dev.off()
 #...........................................................................
 ## SECTION 4 - INPUTTING MISSING VALUES
 # Create a working dataframe from the original dataframe
@@ -96,9 +100,10 @@ df6$Date <- as.Date(df6$Date, format = "%Y-%m-%d")
 # Calculate the days having the mean and median and max.
 s2 <- summary(df6)
 # Develop total daily steps plot histogram.
-p2 <- ggplot(df6, aes(x=Steps)) + geom_histogram(color="black",fill="blue") +
+ggplot(df6, aes(x=Steps)) + geom_histogram(color="black",fill="blue") +
   labs(title="Histogram of Daily Steps (with na Replacement)",x="Number of Steps", y = "Number of Days")
-p2
+dev.copy(png,file="Plot_3.png")
+dev.off()
 # Compariing of summaries - without and with na replacement.
 s0
 s2
@@ -141,7 +146,9 @@ p4b <- ggplot(df10b, aes(x=Interval, y=Steps,group=3)) +
   geom_point() +
   labs(title="Weekdays",x="5-minute Interval",y="Mean Number of Steps")
 par(mfrow=c(1,2))
-grid.arrange(p4a, p4b) # Print stacked separateplots for weekends and weekends.
+grid.arrange(p4a, p4b) # Print stacked separate plots for weekends and weekends.
+dev.copy(png,file="Plot_4.png")
+dev.off()
 #...........................................................................
 ## THE END
 
